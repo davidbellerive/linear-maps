@@ -1,12 +1,12 @@
-.rfc-map-wrap{
-  overflow-x:auto;
-  -webkit-overflow-scrolling:touch;
-  max-width:100%;
-}
-
-.rfc-map{
+div.rfc-map-wrap > img.rfc-map {
   display:block;
   width:1500px;
   max-width:none;
   height:auto;
+}
+
+div.rfc-map-wrap {
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  max-width:100%;
 }
