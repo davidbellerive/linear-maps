@@ -1,0 +1,64 @@
+{
+  "ARTBOARD_WIDTH": 1500,
+  "ARTBOARD_HEIGHT": 300,
+  "BASELINE_Y": 35,
+  "H_PADDING": 90,
+
+  "AUTO_PAD_TERMINALS": true,
+  "PAD_RIGHT_MARGIN": 8,
+  "PAD_LEFT_MARGIN": 8,
+  "PAD_MAX_EXTRA": 260,
+  "PAD_CHECK_LEFT": false,
+
+  "LINE_STROKE": 10,
+  "LINE_OUTLINE_ENABLED": false,
+  "LINE_OUTLINE_WIDTH": 3,
+  "LINE_OUTLINE_COLOR": { "r": 0, "g": 0, "b": 0 },
+
+  "STATION_RADIUS": 10,
+  "STATION_OUTLINE": { "r": 0, "g": 0, "b": 0 },
+  "STATION_STROKE_WIDTH": 3,
+
+  "LABEL_MODE": "angled",
+  "LABEL_TILT": -15,
+  "LABEL_CLEARANCE": 8,
+  "LABEL_X_NUDGE": -8,
+
+  "FONT_SIZE": 18,
+  "FONT_LABEL_NAME": "Futura-Demi",
+  "FONT_TITLE_NAME": "Futura-Demi",
+  "FONT_SUBTITLE_NAME": "Futura-Demi",
+  "FONT_FOOTER_NAME": "ArialMT",
+
+  "DRAW_TITLE": true,
+"TITLE_TEMPLATE": "{name}",
+  "TITLE_FONT_SIZE": 44,
+  "TITLE_COLOR": { "r": 0, "g": 0, "b": 0 },
+  "TITLE_LEFT": 14,
+  "TITLE_TOP_FROM_TOP": 18,
+
+  "DRAW_SUBTITLE": true,
+  "SUBTITLE_TEMPLATE": "{system} • {id} • {years}",
+  "SUBTITLE_FONT_SIZE": 16,
+  "SUBTITLE_COLOR": { "r": 90, "g": 90, "b": 90 },
+  "SUBTITLE_LEFT": 12,
+  "SUBTITLE_TOP_FROM_TOP": 65,
+
+  "FOOTER_TEXT": "Rail Fans Canada — 2026",
+  "FOOTER_FONT_SIZE": 10,
+  "FOOTER_COLOR": { "r": 155, "g": 155, "b": 155 },
+  "FOOTER_BOTTOM_MARGIN": 15,
+
+  "AUTO_HEIGHT": true,
+  "MIN_HEIGHT": 220,
+  "RESERVE_TITLE_BAND": true,
+  "TITLE_BAND_PADDING": 10,
+  "TITLE_BAND_LINE_GAP": 10,
+
+  "EXPORT_DESTINATION_FOLDER": "rfc-maps",
+  "EXPORT_GROUP_BY_SYSTEM": true,
+  "EXPORT_FILENAME_TEMPLATE": "{name} {years}",
+  "EXPORT_SVG": true,
+  "OUTLINE_TEXT_FOR_SVG": true,
+  "CLOSE_AFTER_EXPORT": false
+}
