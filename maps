@@ -1,47 +1,44 @@
-<div id="mapwrap-ttc1" style="overflow-x:auto; max-width:100%; padding:6px 0;">
+<div class="mapwrap" style="overflow-x:auto; max-width:100%; touch-action:none;">
   <img
-    src="https://raw.githubusercontent.com/davidbellerive/rfc-linear-maps/main/TTC-line3-1985-2023.svg"
-    alt="TTC Line 3 — Scarborough RT linear map"
+    src="https://raw.githubusercontent.com/davidbellerive/linear-maps/main/rfc-maps/Toronto%20Transit%20Commission/Line%202%20%E2%80%93%20Bloor%E2%80%93Danforth%201980.svg"
+    alt="TTC Line 2 — Bloor–Danforth (1980)"
     style="display:block; width:1100px; max-width:none; height:auto;"
     loading="lazy"
     decoding="async">
 </div>
 
-<div id="mapcontrols-ttc1"
-     style="display:flex; gap:10px; margin:6px 0 14px 0;">
-  <button type="button"
-    style="padding:10px 14px;"
-    onclick="document.getElementById('mapwrap-ttc1')
-      .scrollBy({left:-320, behavior:'smooth'});">
-    ◀
-  </button>
-  <button type="button"
-    style="padding:10px 14px;"
-    onclick="document.getElementById('mapwrap-ttc1')
-      .scrollBy({left:320, behavior:'smooth'});">
-    ▶
-  </button>
+<div class="mapcontrols" style="margin-top:8px; display:flex; gap:8px;">
+  <button type="button" data-dir="-1">◀</button>
+  <button type="button" data-dir="1">▶</button>
 </div>
+
 <script>
 (function(){
-  var wrap = document.getElementById('mapwrap-ttc1');
-  var controls = document.getElementById('mapcontrols-ttc1');
-
+  var wrap = document.querySelector('.mapwrap');
+  var controls = document.querySelector('.mapcontrols');
   if (!wrap || !controls) return;
 
-  function updateControls(){
-    // scrollWidth > clientWidth means horizontal scrolling is possible
-    if (wrap.scrollWidth > wrap.clientWidth + 2) {
-      controls.style.display = 'flex';
-    } else {
-      controls.style.display = 'none';
-    }
+  function update(){
+    controls.style.display =
+      wrap.scrollWidth > wrap.clientWidth + 2 ? 'flex' : 'none';
   }
 
-  // Run on load
-  updateControls();
+  controls.addEventListener('click', function(e){
+    if (!e.target.dataset.dir) return;
+    wrap.scrollBy({
+      left: parseInt(e.target.dataset.dir,10) * 400,
+      behavior: 'smooth'
+    });
+  });
 
-  // Run again if viewport changes (rotation / resize)
-  window.addEventListener('resize', updateControls);
+  var img = wrap.querySelector('img');
+  if (img) img.addEventListener('load', update);
+  window.addEventListener('resize', update);
+  update();
+
+  // Disable touch panning inside map area (buttons-only UX)
+  wrap.addEventListener('touchmove', function(e){
+    e.preventDefault();
+  }, { passive:false });
 })();
 </script>
