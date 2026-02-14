@@ -1,4 +1,4 @@
-# Illustrator Linear Transit Maps
+# Illustrator Linear Transit Maps (JSON)
 
 This repository contains **programmatically generated linear transit maps** used by **Rail Fans Canada (RFC)** to illustrate rapid transit lines and station sequences across Canadian cities.
 
