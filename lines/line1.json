@@ -1,0 +1,22 @@
+{
+  "system": "OC Transpo",
+  "region": "Ottawa",
+  "line_name": "Line 1 - Confederation Line",
+  "years": "2019",
+  "color": "#D30F1D",
+  "stations": [
+    "Tunney’s Pasture",
+    "Bayview",
+    "Pimisi",
+    "Lyon",
+    "Parliament",
+    "Rideau",
+    "uOttawa",
+    "Lees",
+    "Hurdman",
+    "Tremblay",
+    "St-Laurent",
+    "Cyrville",
+    "Blair"
+  ]
+}
