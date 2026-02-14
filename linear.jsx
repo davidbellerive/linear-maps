@@ -614,7 +614,7 @@ function hexColor(hex) {
   var exportBaseFolder = null;
   if (CFG.EXPORT_SVG) {
     try {
-      exportBaseFolder = resolveExportBaseFolder(linesFolder);
+      exportBaseFolder = resolveExportBaseFolder(linesFolder.parent);
     } catch (eDest) {
       alert(eDest.message);
       return;
