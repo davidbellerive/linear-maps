@@ -1,0 +1,21 @@
+{
+  "id": "line1",
+  "line_name": "Line 1 — Confederation Line",
+  "years": "2019",
+  "color": "#D30F1D",
+  "stations": [
+    "tunney",
+    "bayview",
+    "pimisi",
+    "lyon",
+    "parliament",
+    "rideau",
+    "uottawa",
+    "lees",
+    "hurdman",
+    "tremblay",
+    "st-laurent",
+    "cyrville",
+    "blair"
+  ]
+}

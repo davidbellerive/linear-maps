@@ -1,0 +1,52 @@
+{
+  "system": "OC Transpo",
+  "region": "Ottawa",
+
+  "network": {
+    "line1": { "label": "Line 1",  "color": "#D30F1D" },
+    "line2": { "label": "Line 2",  "color": "#9DC73C" }
+  },
+
+  "stations": {
+    "tunney":      { "label": "Tunney's Pasture" },
+    "bayview":     { "label": "Bayview",    "connections": ["line1", "line2"] },
+    "pimisi":      { "label": "Pimisi",     "label2": "Pimisi" },
+    "lyon":        { "label": "Lyon" },
+    "parliament":  { "label": "Parliament", "label2": "Parlement", "connections": ["line1"], "icons": ["bus"] },
+    "rideau":      { "label": "Rideau",     "connections": ["line1"], "icons": ["bus"] },
+    "uottawa":     { "label": "uOttawa" },
+    "lees":        { "label": "Lees" },
+    "hurdman":     { "label": "Hurdman",    "icons": ["bus"] },
+    "tremblay":    { "label": "Tremblay",   "icons": ["via"] },
+    "st-laurent":  { "label": "St-Laurent", "icons": ["bus"] },
+    "cyrville":    { "label": "Cyrville" },
+    "blair":       { "label": "Blair",      "icons": ["bus"] },
+    "mediatheque": { "label": "Médiathèque" },
+    "monarc":      { "label": "Monarc" },
+    "conroy":      { "label": "Conroy" },
+    "limebank":    { "label": "Limebank" },
+    "bowesville":  { "label": "Bowesville" },
+    "south-keys":  { "label": "South Keys",  "icons": ["bus"] },
+    "walkley":     { "label": "Walkley" },
+    "uplands":     { "label": "Uplands" },
+    "airport":     { "label": "Airport",     "icons": ["airport"] },
+    "baseline":    { "label": "Baseline",    "icons": ["bus"] },
+    "algonquin":   { "label": "Algonquin" },
+    "woodroffe":   { "label": "Woodroffe" },
+    "lincoln":     { "label": "Lincoln Fields", "icons": ["bus"] },
+    "queensway":   { "label": "Queensway" },
+    "cleary":      { "label": "Cleary" },
+    "new-orchard": { "label": "New Orchard" },
+    "moodie":      { "label": "Moodie",      "icons": ["bus"] },
+    "terry-fox":   { "label": "Terry Fox" },
+    "innovation":  { "label": "Innovation" },
+    "centrum":     { "label": "Centrum" },
+    "trim":        { "label": "Trim" },
+    "orleans":     { "label": "Orléans",     "icons": ["bus"] },
+    "jeanne":      { "label": "Jeanne d'Arc" },
+    "convent-glen":{ "label": "Convent Glen" },
+    "chaperal":    { "label": "Chaperal" },
+    "mer-bleue":   { "label": "Mer Bleue" },
+    "renaud":      { "label": "Renaud" }
+  }
+}

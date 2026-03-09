@@ -2,7 +2,7 @@
 
 (function () {
   // =========================
-  // CONFIG
+  // CONFIG DEFAULTS
   // =========================
   var CFG_DEFAULTS = {
     ARTBOARD_WIDTH: 1500,
@@ -30,7 +30,7 @@
     LABEL_CLEARANCE: 10,
     LABEL_X_NUDGE: -6,
 
-    // Fonts (independent, with fallback to ArialMT)
+    // Fonts (independent, fallback to ArialMT)
     FONT_LABEL_NAME: "ArialMT",
     FONT_TITLE_NAME: "ArialMT",
     FONT_SUBTITLE_NAME: "ArialMT",
@@ -41,14 +41,14 @@
     STATION_OUTLINE: "#000000",
 
     // Footer
-    FOOTER_TEXT: "Rail Fans Canada — 2026",
+    FOOTER_TEXT: "Rail Fans Canada \u2014 2026",
     FOOTER_FONT_SIZE: 11,
     FOOTER_COLOR: "#9B9B9B",
     FOOTER_BOTTOM_MARGIN: 15,
 
     // Title
     DRAW_TITLE: true,
-    TITLE_TEMPLATE: "{name}{years_paren}", // tokens: {system} {id} {name} {years} {years_paren}
+    TITLE_TEMPLATE: "{name}{years_paren}", // tokens: {system} {region} {id} {name} {years} {years_paren}
     TITLE_FONT_SIZE: 44,
     TITLE_COLOR: "#000000",
     TITLE_LEFT: 14,
@@ -56,10 +56,10 @@
 
     // Subtitle
     DRAW_SUBTITLE: false,
-    SUBTITLE_TEMPLATE: "{system}", // tokens: {system} {id} {name} {years} {years_paren}
+    SUBTITLE_TEMPLATE: "{system} \u2022 {region} \u2022 {years}", // tokens: {system} {region} {id} {name} {years} {years_paren}
     SUBTITLE_FONT_SIZE: 18,
     SUBTITLE_COLOR: "#5A5A5A",
-    SUBTITLE_LEFT: 14,         // used only when no title exists
+    SUBTITLE_LEFT: 14,
     SUBTITLE_TOP_FROM_TOP: 70,
 
     // Dynamic height
@@ -70,20 +70,23 @@
     TITLE_BAND_PADDING: 10,
     TITLE_BAND_LINE_GAP: 10,
 
+    // Connection marker pills (rendered below station dot)
+    DRAW_CONNECTIONS: true,
+    CONNECTION_PILL_HEIGHT: 12,    // height of the colored pill
+    CONNECTION_PILL_MIN_WIDTH: 20, // minimum pill width
+    CONNECTION_PILL_RADIUS: 3,     // corner radius
+    CONNECTION_FONT_SIZE: 8,
+    CONNECTION_Y_GAP: 4,           // gap between station dot bottom and first pill
+    CONNECTION_Y_SPACING: 3,       // gap between stacked pills
+
     // Export
     EXPORT_SVG: true,
-
-    // If empty: export next to the selected lines folder
-    // If set:
-    //   - absolute path: "C:/path/to/output" or "/Users/name/output"
-    //   - relative path: "exports-svg" (relative to the selected lines folder)
+    // absolute path: "C:/path/to/output" or "/Users/name/output"
+    // relative path: "exports-svg" (relative to the system folder)
+    // empty: export next to the system folder
     EXPORT_DESTINATION_FOLDER: "",
-
-    // If true: create a subfolder per system (CSV col 1)
     EXPORT_GROUP_BY_SYSTEM: false,
-
-    // Output file name (without extension). Default uses line_name (CSV field 3 => L.name)
-    // Tokens: {system} {id} {name} {years} {years_paren}
+    // tokens: {system} {region} {id} {name} {years} {years_paren}
     EXPORT_FILENAME_TEMPLATE: "{name}",
 
     OUTLINE_TEXT_FOR_SVG: true,
@@ -93,7 +96,7 @@
   var CFG = null;
 
   // =========================
-  // Helpers
+  // HELPERS
   // =========================
   function trim(s) { return (s || "").replace(/^\s+|\s+$/g, ""); }
 
@@ -134,7 +137,7 @@
     return base;
   }
 
-  // Font getter: if requested font doesn't exist, fallback to ArialMT
+  // Font getter: fallback to ArialMT if requested font is unavailable
   function getFontOrArial(fontName) {
     var name = trim(fontName || "");
     if (!name) name = "ArialMT";
@@ -143,28 +146,28 @@
   }
 
   function normalizeHex(hex) {
-  var h = trim(hex || "");
-  if (!h) throw new Error("Missing HEX color.");
-  if (h.charAt(0) !== "#") h = "#" + h;
-  if (!/^#([0-9a-fA-F]{6})$/.test(h)) throw new Error("Invalid HEX color: " + hex);
-  return h.toUpperCase();
-}
+    var h = trim(hex || "");
+    if (!h) throw new Error("Missing HEX color.");
+    if (h.charAt(0) !== "#") h = "#" + h;
+    if (!/^#([0-9a-fA-F]{6})$/.test(h)) throw new Error("Invalid HEX color: " + hex);
+    return h.toUpperCase();
+  }
 
-function hexToRgb255(hex) {
-  var h = normalizeHex(hex).substring(1);
-  return {
-    r: parseInt(h.substring(0, 2), 16),
-    g: parseInt(h.substring(2, 4), 16),
-    b: parseInt(h.substring(4, 6), 16)
-  };
-}
+  function hexToRgb255(hex) {
+    var h = normalizeHex(hex).substring(1);
+    return {
+      r: parseInt(h.substring(0, 2), 16),
+      g: parseInt(h.substring(2, 4), 16),
+      b: parseInt(h.substring(4, 6), 16)
+    };
+  }
 
-function hexColor(hex) {
-  var o = hexToRgb255(hex);
-  var c = new RGBColor();
-  c.red = o.r; c.green = o.g; c.blue = o.b;
-  return c;
-}
+  function hexColor(hex) {
+    var o = hexToRgb255(hex);
+    var c = new RGBColor();
+    c.red = o.r; c.green = o.g; c.blue = o.b;
+    return c;
+  }
 
   function safeFileName(s) {
     return (s || "")
@@ -173,6 +176,9 @@ function hexColor(hex) {
       .replace(/^\s+|\s+$/g, "");
   }
 
+  // =========================
+  // CONFIG LOADING
+  // =========================
   function loadConfigFromJSONFile(cfgFile) {
     var raw = trim(readFile(cfgFile));
     if (raw && raw.charCodeAt(0) === 0xFEFF) raw = raw.substring(1);
@@ -204,13 +210,13 @@ function hexColor(hex) {
     for (var k in CFG_DEFAULTS) cfg[k] = CFG_DEFAULTS[k];
     mergeDeep(cfg, overrides);
 
-    // Ensure font defaults always exist (and always fallback to ArialMT)
-    if (!cfg.FONT_LABEL_NAME) cfg.FONT_LABEL_NAME = "ArialMT";
-    if (!cfg.FONT_TITLE_NAME) cfg.FONT_TITLE_NAME = "ArialMT";
+    // Ensure font defaults always exist
+    if (!cfg.FONT_LABEL_NAME)    cfg.FONT_LABEL_NAME    = "ArialMT";
+    if (!cfg.FONT_TITLE_NAME)    cfg.FONT_TITLE_NAME    = "ArialMT";
     if (!cfg.FONT_SUBTITLE_NAME) cfg.FONT_SUBTITLE_NAME = "ArialMT";
-    if (!cfg.FONT_FOOTER_NAME) cfg.FONT_FOOTER_NAME = "ArialMT";
+    if (!cfg.FONT_FOOTER_NAME)   cfg.FONT_FOOTER_NAME   = "ArialMT";
 
-    // Warn unknown keys (typo catcher)
+    // Warn on unknown keys (typo catcher)
     var unknown = [];
     for (var ok in overrides) {
       if (overrides.hasOwnProperty(ok) && !CFG_DEFAULTS.hasOwnProperty(ok)) unknown.push(ok);
@@ -233,7 +239,9 @@ function hexColor(hex) {
     return;
   }
 
-  // CSV splitter that respects quotes and escaped quotes
+  // =========================
+  // LAYOUT HELPERS
+  // =========================
   function getLabelRotation() {
     if (CFG.LABEL_MODE === "vertical") return 90;
     return 90 + CFG.LABEL_TILT;
@@ -256,12 +264,14 @@ function hexColor(hex) {
     return bg;
   }
 
+  // Measure tallest text frame, excluding the footer (which is repositioned after resize)
   function getMaxTopOfTextFrames(doc) {
     var maxTop = 0;
     for (var i = 0; i < doc.textFrames.length; i++) {
       var tf = doc.textFrames[i];
+      if (tf.name === "footer") continue; // footer is placed after height pass
       try {
-        var gb = tf.geometricBounds; // [L,T,R,B]
+        var gb = tf.geometricBounds; // [L, T, R, B]
         maxTop = Math.max(maxTop, gb[1]);
       } catch (e) {}
     }
@@ -272,7 +282,7 @@ function hexColor(hex) {
     var ab = doc.artboards[0];
     ab.artboardRect = [0, newH, CFG.ARTBOARD_WIDTH, 0];
 
-    // rebuild bg
+    // Rebuild background at new height
     for (var i = doc.pathItems.length - 1; i >= 0; i--) {
       var p = doc.pathItems[i];
       if (p.name === "bg-white") {
@@ -288,41 +298,61 @@ function hexColor(hex) {
     return (CFG.TITLE_FONT_SIZE * 1.35) + CFG.TITLE_BAND_PADDING;
   }
 
+  // Outline all live text for SVG export. Collects and reports any failures.
   function outlineAllText(doc) {
+    var failed = [];
     for (var i = doc.textFrames.length - 1; i >= 0; i--) {
       var tf = doc.textFrames[i];
       try {
         tf.createOutline();
-        tf.remove();
-      } catch (e) {}
+      } catch (e) {
+        failed.push(tf.contents ? tf.contents.substring(0, 30) : "(unnamed)");
+      }
+    }
+    if (failed.length) {
+      alert(
+        failed.length + " text frame(s) could not be outlined and may embed fonts in the SVG:\n\n" +
+        failed.join("\n")
+      );
     }
   }
 
+  // =========================
+  // FOOTER
+  // Footer is drawn AFTER height resize so it always sits at the bottom correctly.
+  // =========================
   function drawFooter(doc, text, fontObj) {
     if (!text) return;
 
+    var H = getArtboardHeight(doc);
+
     var footer = doc.textFrames.add();
+    footer.name = "footer";
     footer.contents = text;
     footer.textRange.characterAttributes.size = CFG.FOOTER_FONT_SIZE;
     footer.textRange.characterAttributes.textFont = fontObj;
     footer.textRange.paragraphAttributes.justification = Justification.CENTER;
     footer.textRange.characterAttributes.fillColor = hexColor(CFG.FOOTER_COLOR);
 
-    footer.left = 0;
-    footer.top = CFG.FOOTER_BOTTOM_MARGIN;
-
     var gb = footer.geometricBounds;
     var w = gb[2] - gb[0];
     footer.left = (CFG.ARTBOARD_WIDTH - w) / 2;
+    footer.top  = CFG.FOOTER_BOTTOM_MARGIN;
   }
 
-  // ---- template helpers ----
+  // =========================
+  // TEMPLATE TOKENS
+  // {system} {region} {id} {name} {years} {years_paren}
+  // Note: {region} is the human-readable region name from stations.json.
+  //       {id} is the line's own id field from the line file.
+  // =========================
   function applyTemplate(tpl, L) {
     var years = trim(L.years || "");
     var yearsParen = years ? (" (" + years + ")") : "";
 
     var s = tpl || "";
     s = s.split("{system}").join(L.system || "");
+    s = s.split("{region}").join(L.region || "");
     s = s.split("{id}").join(L.id || "");
     s = s.split("{name}").join(L.name || "");
     s = s.split("{years}").join(years);
@@ -331,46 +361,40 @@ function hexColor(hex) {
     return s;
   }
 
-  // ----- OUTLINE-BASED LEFT ALIGNMENT (reliable) -----
+  // =========================
+  // OUTLINE-BASED LEFT ALIGNMENT
+  // Duplicate → outline → measure → delete, preserving live text.
+  // =========================
   function getOutlinedLeft(tf) {
-    // Duplicate → outline → measure → delete, so we don't destroy live text
     var dup = null;
     var g = null;
     try {
       dup = tf.duplicate();
-      // keep it out of the way; does not need to be visible
       dup.hidden = true;
-
-      // Illustrator sometimes needs a redraw before createOutline/bounds settle
       app.redraw();
-
-      g = dup.createOutline(); // GroupItem
+      g = dup.createOutline();
       app.redraw();
-
-      var gb = g.geometricBounds; // [L,T,R,B] of outline geometry
-      var left = gb[0];
-
-      try { g.remove(); } catch (e1) {}
+      var left = g.geometricBounds[0];
+      try { g.remove(); }   catch (e1) {}
       try { dup.remove(); } catch (e2) {}
-
       return left;
     } catch (e) {
-      try { if (g) g.remove(); } catch (e3) {}
+      try { if (g)   g.remove(); }   catch (e3) {}
       try { if (dup) dup.remove(); } catch (e4) {}
-      // fallback to geometricBounds if outlining fails
       try { return tf.geometricBounds[0]; } catch (e5) { return tf.left; }
     }
   }
 
   function snapTextOutlineLeft(tf, targetX) {
-    // move tf so its OUTLINED left edge equals targetX
     var leftNow = getOutlinedLeft(tf);
-    var dx = targetX - leftNow;
-    tf.left += dx;
+    tf.left += (targetX - leftNow);
     app.redraw();
     return getOutlinedLeft(tf);
   }
 
+  // =========================
+  // TITLE + SUBTITLE
+  // =========================
   function drawTitle(doc, L, fontObj) {
     if (!CFG.DRAW_TITLE) return null;
 
@@ -389,9 +413,7 @@ function hexColor(hex) {
     title.left = CFG.TITLE_LEFT;
     title.top  = H - CFG.TITLE_TOP_FROM_TOP;
 
-    // Make title's outlined-left EXACTLY TITLE_LEFT
     var titleOutlineLeft = snapTextOutlineLeft(title, CFG.TITLE_LEFT);
-
     return { frame: title, outlineLeft: titleOutlineLeft };
   }
 
@@ -410,20 +432,96 @@ function hexColor(hex) {
     sub.textRange.characterAttributes.fillColor = hexColor(CFG.SUBTITLE_COLOR);
     sub.textRange.paragraphAttributes.justification = Justification.LEFT;
 
-    // initial placement
     sub.left = CFG.SUBTITLE_LEFT;
     sub.top  = H - CFG.SUBTITLE_TOP_FROM_TOP;
 
-    // If a title outline-left is provided, match it; otherwise snap to SUBTITLE_LEFT
     var target = (alignOutlineLeftToX !== null && alignOutlineLeftToX !== undefined)
       ? alignOutlineLeftToX
       : CFG.SUBTITLE_LEFT;
 
     snapTextOutlineLeft(sub, target);
-
     return sub;
   }
 
+  // =========================
+  // CONNECTION MARKERS
+  // Draws colored pills below a station dot for each connection to another line.
+  // The current line's own ID is excluded so only transfers are shown.
+  // =========================
+  function drawConnectionMarkers(doc, station, currentLineId, network, x, dotBottomY, fontObj) {
+    if (!CFG.DRAW_CONNECTIONS) return 0;
+    if (!station.connections || !station.connections.length) return 0;
+    if (!network) return 0;
+
+    var pillH = CFG.CONNECTION_PILL_HEIGHT;
+    var pillMinW = CFG.CONNECTION_PILL_MIN_WIDTH;
+    var yGap = CFG.CONNECTION_Y_GAP;
+    var ySpacing = CFG.CONNECTION_Y_SPACING;
+    var totalHeightUsed = 0;
+
+    var currentY = dotBottomY - yGap; // Illustrator Y is top-of-artboard = high value
+
+    for (var c = 0; c < station.connections.length; c++) {
+      var connId = station.connections[c];
+
+      // Skip the line currently being rendered — only show transfer targets
+      if (connId === currentLineId) continue;
+
+      var connDef = network[connId];
+      if (!connDef) continue; // unknown line ID, skip silently
+
+      var connColor = connDef.color ? hexColor(connDef.color) : hexColor("#888888");
+      var connLabel = connDef.label || connId;
+
+      // Measure label width with a temporary text frame
+      var tmpTf = doc.textFrames.add();
+      tmpTf.contents = connLabel;
+      tmpTf.textRange.characterAttributes.size = CFG.CONNECTION_FONT_SIZE;
+      tmpTf.textRange.characterAttributes.textFont = fontObj;
+      var tmpGb = tmpTf.geometricBounds;
+      var textW = tmpGb[2] - tmpGb[0];
+      tmpTf.remove();
+
+      var pillW = Math.max(pillMinW, textW + 8);
+      var pillLeft = x - (pillW / 2);
+      var pillTop  = currentY; // top of pill in Illustrator coords
+
+      // Draw rounded rectangle pill
+      var pill = doc.pathItems.roundedRectangle(
+        pillTop, pillLeft, pillW, pillH,
+        CFG.CONNECTION_PILL_RADIUS * 2,
+        CFG.CONNECTION_PILL_RADIUS * 2
+      );
+      pill.filled = true;
+      pill.stroked = false;
+      pill.fillColor = connColor;
+
+      // Draw label centered in pill
+      var lbl = doc.textFrames.add();
+      lbl.contents = connLabel;
+      lbl.textRange.characterAttributes.size = CFG.CONNECTION_FONT_SIZE;
+      lbl.textRange.characterAttributes.textFont = fontObj;
+      lbl.textRange.paragraphAttributes.justification = Justification.CENTER;
+
+      var white = new RGBColor();
+      white.red = 255; white.green = 255; white.blue = 255;
+      lbl.textRange.characterAttributes.fillColor = white;
+
+      var lblGb = lbl.geometricBounds;
+      var lblH   = lblGb[1] - lblGb[3];
+      lbl.left = pillLeft + (pillW / 2) - ((lblGb[2] - lblGb[0]) / 2);
+      lbl.top  = pillTop - (pillH / 2) + (lblH / 2);
+
+      currentY = currentY - pillH - ySpacing;
+      totalHeightUsed += pillH + ySpacing;
+    }
+
+    return totalHeightUsed;
+  }
+
+  // =========================
+  // EXPORT HELPERS
+  // =========================
   function ensureFolder(parentFolder, name) {
     var f = Folder(parentFolder.fsName + "/" + name);
     if (!f.exists) {
@@ -454,9 +552,12 @@ function hexColor(hex) {
     doc.exportFile(destFile, ExportType.SVG, opts);
   }
 
-  function measureLabelOverhang(doc, text, anchorX, anchorY, rotation, fontObj) {
+  // =========================
+  // LABEL OVERHANG / PADDING
+  // =========================
+  function measureLabelOverhang(doc, labelText, anchorX, anchorY, rotation, fontObj) {
     var tf = doc.textFrames.add();
-    tf.contents = text;
+    tf.contents = labelText;
     tf.textRange.characterAttributes.size = CFG.FONT_SIZE;
     tf.textRange.characterAttributes.textFont = fontObj;
     tf.textRange.paragraphAttributes.justification = Justification.LEFT;
@@ -476,32 +577,29 @@ function hexColor(hex) {
     tf.remove();
 
     return {
-      leftOverhang: Math.max(0, anchorX - minX),
+      leftOverhang:  Math.max(0, anchorX - minX),
       rightOverhang: Math.max(0, maxX - anchorX)
     };
   }
 
   function computeTerminalExtraPadding(doc, stations, basePad, rotation, fontObj, baselineY) {
-    var lineLeft = basePad;
+    var lineLeft  = basePad;
     var lineRight = CFG.ARTBOARD_WIDTH - basePad;
-
-    var firstX = lineLeft;
-    var lastX  = lineRight;
-
-    var extraLeft = 0;
+    var extraLeft  = 0;
     var extraRight = 0;
 
-    var lastText = stations[stations.length - 1];
-    var mLast = measureLabelOverhang(doc, lastText, lastX, baselineY, rotation, fontObj);
-
+    // Right terminal — always checked
+    var lastLabel = stations[stations.length - 1].label;
+    var mLast = measureLabelOverhang(doc, lastLabel, lineRight, baselineY, rotation, fontObj);
     extraRight = Math.min(
       CFG.PAD_MAX_EXTRA,
       Math.max(0, (mLast.rightOverhang + CFG.PAD_RIGHT_MARGIN) - basePad)
     );
 
+    // Left terminal — opt-in via PAD_CHECK_LEFT
     if (CFG.PAD_CHECK_LEFT) {
-      var firstText = stations[0];
-      var mFirst = measureLabelOverhang(doc, firstText, firstX, baselineY, rotation, fontObj);
+      var firstLabel = stations[0].label;
+      var mFirst = measureLabelOverhang(doc, firstLabel, lineLeft, baselineY, rotation, fontObj);
       extraLeft = Math.min(
         CFG.PAD_MAX_EXTRA,
         Math.max(0, (mFirst.leftOverhang + CFG.PAD_LEFT_MARGIN) - basePad)
@@ -511,110 +609,203 @@ function hexColor(hex) {
     return { extraLeft: extraLeft, extraRight: extraRight };
   }
 
+  // =========================
+  // STATION REGISTRY LOADING
+  // Looks for stations.json in the same folder as the line files (system folder).
+  // If absent, the script operates in legacy mode (stations array = plain strings).
+  // =========================
+  function loadStationRegistry(systemFolder) {
+    var registryFile = File(systemFolder.fsName + "/stations.json");
+    if (!registryFile.exists) return null;
 
-  // =========================
-  // Load line JSON files (one file per line)
-  // =========================
-  function listJSONFiles(folder) {
-    var files = folder.getFiles(function (f) {
-      return (f instanceof File) && /\.json$/i.test(f.name);
-    });
-    return files;
+    var raw = trim(readFile(registryFile));
+    if (raw && raw.charCodeAt(0) === 0xFEFF) raw = raw.substring(1);
+
+    var parsed = safeParseJSON(raw);
+    if (!parsed) throw new Error("Invalid JSON in: " + registryFile.fsName);
+
+    return {
+      system:   trim(parsed.system  || ""),
+      region:   trim(parsed.region  || ""),
+      network:  parsed.network  || {},
+      stations: parsed.stations || {}
+    };
   }
 
-  function parseLineJSONFile(file) {
+  // =========================
+  // LINE FILE PARSING
+  // Resolves station IDs against the registry (if present).
+  // Falls back to treating array entries as plain label strings (legacy behaviour).
+  // =========================
+  function listJSONFiles(folder) {
+    return folder.getFiles(function (f) {
+      return (f instanceof File) && /\.json$/i.test(f.name) && f.name !== "stations.json";
+    });
+  }
+
+  function parseLineJSONFile(file, registry) {
     var raw = trim(readFile(file));
     if (raw && raw.charCodeAt(0) === 0xFEFF) raw = raw.substring(1);
 
     var obj = safeParseJSON(raw);
     if (obj === null) throw new Error("Invalid JSON in: " + file.fsName);
 
-    // Required fields (mirrors CSV semantics)
-    // system -> operator/network name
-    // region -> becomes L.id (token {id})
-    // line_name -> becomes L.name (token {name})
-    // years -> display years
-    // color -> HEX string "#RRGGBB"
-    // stations -> array of station names OR pipe-delimited string
-    var system = trim(obj.system || "");
-    var region = trim(obj.region || "");
+    var lineId   = trim(obj.id        || "");
     var lineName = trim(obj.line_name || "");
-    var years = trim(obj.years || "");
-    var color = trim(obj.color || "");
-    var stations = obj.stations;
+    var years    = trim(obj.years     || "");
+    var color    = trim(obj.color     || "");
+    var rawStations = obj.stations;
 
-    if (!system) throw new Error("Missing required field: system (" + file.name + ")");
-    if (!region) throw new Error("Missing required field: region (" + file.name + ")");
     if (!lineName) throw new Error("Missing required field: line_name (" + file.name + ")");
-    if (!color) throw new Error("Missing required field: color (" + file.name + ")");
+    if (!color)    throw new Error("Missing required field: color (" + file.name + ")");
 
     color = normalizeHex(color);
 
-    var stationList = [];
-    if (stations instanceof Array) {
-      for (var i = 0; i < stations.length; i++) stationList.push(trim(stations[i]));
-    } else if (typeof stations === "string") {
-      var parts = stations.split("|");
-      for (var j = 0; j < parts.length; j++) stationList.push(trim(parts[j]));
+    // system + region: prefer registry values; fall back to fields in the line file itself
+    var system = registry ? registry.system : trim(obj.system || "");
+    var region = registry ? registry.region : trim(obj.region || "");
+    var network = registry ? registry.network : {};
+
+    if (!system) throw new Error("Missing system name. Define it in stations.json or in the line file (" + file.name + ")");
+    if (!region) throw new Error("Missing region name. Define it in stations.json or in the line file (" + file.name + ")");
+
+    // Resolve station list
+    var stationIds = [];
+    if (rawStations instanceof Array) {
+      for (var i = 0; i < rawStations.length; i++) {
+        var entry = rawStations[i];
+        stationIds.push(typeof entry === "string" ? trim(entry) : null);
+      }
+    } else if (typeof rawStations === "string") {
+      // Legacy pipe-delimited string
+      var parts = rawStations.split("|");
+      for (var j = 0; j < parts.length; j++) stationIds.push(trim(parts[j]));
     } else {
       throw new Error("stations must be an array or a pipe-delimited string (" + file.name + ")");
     }
 
-    // remove empties
+    // Remove empties
     var cleaned = [];
-    for (var k = 0; k < stationList.length; k++) if (stationList[k]) cleaned.push(stationList[k]);
+    for (var k = 0; k < stationIds.length; k++) if (stationIds[k]) cleaned.push(stationIds[k]);
     if (cleaned.length < 2) throw new Error("stations must contain at least 2 entries (" + file.name + ")");
 
+    // Resolve station objects
+    // With registry: look up each ID and return enriched object.
+    // Without registry (legacy): treat each entry as the display label directly.
+    var resolvedStations = [];
+    for (var s = 0; s < cleaned.length; s++) {
+      var sid = cleaned[s];
+
+      if (registry && registry.stations) {
+        var staDef = registry.stations[sid];
+        if (!staDef) {
+          throw new Error(
+            "Station ID \"" + sid + "\" not found in stations.json (" + file.name + ")"
+          );
+        }
+        resolvedStations.push({
+          id:          sid,
+          label:       trim(staDef.label  || sid),
+          label2:      trim(staDef.label2 || ""),
+          connections: staDef.connections instanceof Array ? staDef.connections : [],
+          icons:       staDef.icons       instanceof Array ? staDef.icons       : []
+        });
+      } else {
+        // Legacy mode: entry is a plain label string
+        resolvedStations.push({
+          id:          sid,
+          label:       sid,
+          label2:      "",
+          connections: [],
+          icons:       []
+        });
+      }
+    }
+
     return {
-      system: system,
-      id: region,
-      name: lineName,
-      years: years,
-      color: color,      // HEX string
-      stations: cleaned
+      id:       lineId,
+      system:   system,
+      region:   region,
+      name:     lineName,
+      years:    years,
+      color:    color,
+      network:  network,
+      stations: resolvedStations
     };
   }
 
+  // =========================
+  // FOLDER DISCOVERY
+  // Script walks up one level looking for system subfolders containing line files.
+  // Falls back to a manual folder select if nothing is found automatically.
+  // =========================
   var scriptFolder = getScriptFolder();
-  var linesFolder = null;
+  var systemFolders = [];
 
   if (scriptFolder) {
-    var candidateFolder = Folder(scriptFolder.fsName + "/lines");
-    if (candidateFolder.exists) linesFolder = candidateFolder;
-  }
-
-  if (!linesFolder) {
-    linesFolder = Folder.selectDialog("Select folder containing line JSON files");
-    if (!linesFolder) {
-      alert("No lines folder selected.");
-      return;
+    // Check for a direct "lines/" sibling folder
+    var directLines = Folder(scriptFolder.fsName + "/lines");
+    if (directLines.exists) {
+      // Check if lines/ itself contains system subfolders
+      var subFolders = directLines.getFiles(function (f) { return f instanceof Folder; });
+      if (subFolders.length > 0) {
+        // lines/ contains system subfolders (new structure)
+        for (var sf = 0; sf < subFolders.length; sf++) systemFolders.push(subFolders[sf]);
+      } else {
+        // lines/ is itself a flat folder of line files (legacy structure)
+        systemFolders.push(directLines);
+      }
     }
   }
 
-  var jsonFiles = listJSONFiles(linesFolder);
-  if (!jsonFiles.length) {
-    alert("No .json files found in:\n" + linesFolder.fsName);
+  if (!systemFolders.length) {
+    var manualFolder = Folder.selectDialog("Select folder containing line JSON files (or a system subfolder)");
+    if (!manualFolder) { alert("No folder selected."); return; }
+    systemFolders.push(manualFolder);
+  }
+
+  // =========================
+  // LOAD ALL LINES across all system folders
+  // =========================
+  var LINES = [];
+
+  for (var sfi = 0; sfi < systemFolders.length; sfi++) {
+    var sysFolder = systemFolders[sfi];
+
+    var registry = null;
+    try {
+      registry = loadStationRegistry(sysFolder);
+    } catch (eReg) {
+      alert("Failed to load stations.json in:\n" + sysFolder.fsName + "\n\n" + eReg.message);
+      return;
+    }
+
+    var jsonFiles = listJSONFiles(sysFolder);
+    if (!jsonFiles.length) continue;
+
+    for (var f = 0; f < jsonFiles.length; f++) {
+      try {
+        LINES.push(parseLineJSONFile(jsonFiles[f], registry));
+      } catch (eLine) {
+        alert("Failed to parse line file:\n" + jsonFiles[f].fsName + "\n\n" + eLine.message);
+        return;
+      }
+    }
+  }
+
+  if (!LINES.length) {
+    alert("No line files found.");
     return;
   }
 
-  var LINES = [];
-  for (var f = 0; f < jsonFiles.length; f++) {
-    try {
-      LINES.push(parseLineJSONFile(jsonFiles[f]));
-    } catch (eLine) {
-      alert("Failed to parse line file:" + jsonFiles[f].fsName + "" + eLine.message);
-      return;
-    }
-  }
-
-
   // =========================
-  // Export folder resolution
+  // EXPORT FOLDER RESOLUTION
+  // Base is the parent of the first system folder (i.e. the lines/ folder)
   // =========================
   var exportBaseFolder = null;
   if (CFG.EXPORT_SVG) {
     try {
-      exportBaseFolder = resolveExportBaseFolder(linesFolder.parent);
+      exportBaseFolder = resolveExportBaseFolder(systemFolders[0].parent);
     } catch (eDest) {
       alert(eDest.message);
       return;
@@ -622,19 +813,19 @@ function hexColor(hex) {
   }
 
   // =========================
-  // Fonts (resolved once, all fallback to ArialMT)
+  // FONTS — resolved once, shared across all docs
   // =========================
-  var labelFontObj = getFontOrArial(CFG.FONT_LABEL_NAME);
-  var titleFontObj = getFontOrArial(CFG.FONT_TITLE_NAME);
+  var labelFontObj    = getFontOrArial(CFG.FONT_LABEL_NAME);
+  var titleFontObj    = getFontOrArial(CFG.FONT_TITLE_NAME);
   var subtitleFontObj = getFontOrArial(CFG.FONT_SUBTITLE_NAME);
-  var footerFontObj = getFontOrArial(CFG.FONT_FOOTER_NAME);
+  var footerFontObj   = getFontOrArial(CFG.FONT_FOOTER_NAME);
+  var connFontObj     = getFontOrArial(CFG.FONT_LABEL_NAME);
 
-  // Shared objects
   var stationStroke = hexColor(CFG.STATION_OUTLINE);
   var labelRotation = getLabelRotation();
 
   // =========================
-  // Generate docs
+  // GENERATE DOCUMENTS
   // =========================
   for (var li = 0; li < LINES.length; li++) {
     var L = LINES[li];
@@ -649,8 +840,8 @@ function hexColor(hex) {
 
     var baselineY = CFG.BASELINE_Y;
 
-    // padding
-    var padLeft = CFG.H_PADDING;
+    // Compute terminal padding
+    var padLeft  = CFG.H_PADDING;
     var padRight = CFG.H_PADDING;
 
     if (CFG.AUTO_PAD_TERMINALS) {
@@ -659,44 +850,52 @@ function hexColor(hex) {
       padRight = CFG.H_PADDING + extras.extraRight;
     }
 
-    var lineLeft = padLeft;
+    var lineLeft  = padLeft;
     var lineRight = CFG.ARTBOARD_WIDTH - padRight;
 
     if (lineRight - lineLeft < 200) {
-      lineLeft = CFG.H_PADDING;
+      lineLeft  = CFG.H_PADDING;
       lineRight = CFG.ARTBOARD_WIDTH - CFG.H_PADDING;
     }
 
     var spacing = (lineRight - lineLeft) / (L.stations.length - 1);
 
-    // Optional line outline
+    // Optional line outline (decorative border behind the main stroke)
     if (CFG.LINE_OUTLINE_ENABLED) {
-      var outline = doc.pathItems.add();
-      outline.stroked = true;
-      outline.filled = false;
-      outline.strokeWidth = CFG.LINE_STROKE + (CFG.LINE_OUTLINE_WIDTH * 2);
-      outline.strokeCap = StrokeCap.ROUNDENDCAP;
-      outline.strokeColor = hexColor(CFG.LINE_OUTLINE_COLOR);
-      outline.setEntirePath([[lineLeft, baselineY], [lineRight, baselineY]]);
+      var lineOutline = doc.pathItems.add();
+      lineOutline.stroked = true;
+      lineOutline.filled = false;
+      lineOutline.strokeWidth = CFG.LINE_STROKE + (CFG.LINE_OUTLINE_WIDTH * 2);
+      lineOutline.strokeCap = StrokeCap.ROUNDENDCAP;
+      lineOutline.strokeColor = hexColor(CFG.LINE_OUTLINE_COLOR);
+      lineOutline.setEntirePath([[lineLeft, baselineY], [lineRight, baselineY]]);
     }
 
-    // Main line
-    var line = doc.pathItems.add();
-    line.stroked = true;
-    line.filled = false;
-    line.strokeWidth = CFG.LINE_STROKE;
-    line.strokeCap = StrokeCap.ROUNDENDCAP;
-    line.strokeColor = hexColor(L.color);
-    line.setEntirePath([[lineLeft, baselineY], [lineRight, baselineY]]);
+    // Main line stroke
+    var lineItem = doc.pathItems.add();
+    lineItem.stroked = true;
+    lineItem.filled = false;
+    lineItem.strokeWidth = CFG.LINE_STROKE;
+    lineItem.strokeCap = StrokeCap.ROUNDENDCAP;
+    lineItem.strokeColor = hexColor(L.color);
+    lineItem.setEntirePath([[lineLeft, baselineY], [lineRight, baselineY]]);
 
     var white = new RGBColor();
     white.red = 255; white.green = 255; white.blue = 255;
 
-    var lineTopY = baselineY + (CFG.LINE_STROKE / 2);
+    var lineTopY    = baselineY + (CFG.LINE_STROKE / 2);
+    var dotBottomY  = baselineY - CFG.STATION_RADIUS; // bottom of station circle in Illustrator Y
 
-    // Stations + labels
+    // Stations, labels, connection markers
     for (var i = 0; i < L.stations.length; i++) {
+      var station = L.stations[i];
       var x = lineLeft + i * spacing;
+
+      // Station dot
+      var stationStrokeWidth =
+        (CFG.STATION_STROKE_WIDTH !== null && CFG.STATION_STROKE_WIDTH !== undefined)
+          ? CFG.STATION_STROKE_WIDTH
+          : Math.max(2, Math.round(CFG.LINE_STROKE * 0.35));
 
       var dot = doc.pathItems.ellipse(
         baselineY + CFG.STATION_RADIUS,
@@ -708,23 +907,21 @@ function hexColor(hex) {
       dot.stroked = true;
       dot.fillColor = white;
       dot.strokeColor = stationStroke;
-
-      var stationStrokeWidth =
-        (CFG.STATION_STROKE_WIDTH !== null && CFG.STATION_STROKE_WIDTH !== undefined)
-          ? CFG.STATION_STROKE_WIDTH
-          : Math.max(2, Math.round(CFG.LINE_STROKE * 0.35));
-
       dot.strokeWidth = stationStrokeWidth;
 
+      // Station label
+      // label2 is rendered as a second line using \r (native Illustrator line break in JSX)
+      var labelText = station.label;
+      if (station.label2) labelText = labelText + "\r" + station.label2;
+
       var label = doc.textFrames.add();
-      label.contents = L.stations[i];
+      label.contents = labelText;
       label.textRange.characterAttributes.size = CFG.FONT_SIZE;
       label.textRange.characterAttributes.textFont = labelFontObj;
       label.textRange.paragraphAttributes.justification = Justification.LEFT;
 
       label.left = x;
-      label.top = baselineY;
-
+      label.top  = baselineY;
       label.rotate(labelRotation);
 
       var gb = label.geometricBounds;
@@ -733,12 +930,12 @@ function hexColor(hex) {
 
       gb = label.geometricBounds;
       label.top += ((lineTopY + CFG.LABEL_CLEARANCE) - gb[3]);
+
+      // Connection markers below station dot
+      drawConnectionMarkers(doc, station, L.id, L.network, x, dotBottomY, connFontObj);
     }
 
-    // Footer first (so height calc includes it if needed)
-    drawFooter(doc, CFG.FOOTER_TEXT, footerFontObj);
-
-    // Dynamic height pass
+    // Dynamic height pass — footer excluded from measurement, drawn after resize
     if (CFG.AUTO_HEIGHT) {
       var maxTextTop = getMaxTopOfTextFrames(doc);
 
@@ -751,13 +948,16 @@ function hexColor(hex) {
       resizeArtboardHeight(doc, neededH);
     }
 
-    // Title + Subtitle after resizing (subtitle aligned to TITLE via outline-left)
+    // Title + subtitle drawn after resize
     var titleInfo = drawTitle(doc, L, titleFontObj);
     var titleOutlineLeft = titleInfo ? titleInfo.outlineLeft : null;
     drawSubtitle(doc, L, subtitleFontObj, titleOutlineLeft);
 
+    // Footer drawn last, after final canvas height is known
+    drawFooter(doc, CFG.FOOTER_TEXT, footerFontObj);
+
     // =========================
-    // Export SVG
+    // SVG EXPORT
     // =========================
     if (CFG.EXPORT_SVG && exportBaseFolder) {
       var targetFolder = exportBaseFolder;
@@ -794,8 +994,8 @@ function hexColor(hex) {
   if (CFG.EXPORT_SVG) {
     exportMsg =
       "\n\nExported SVGs to:\n" + exportBaseFolder.fsName +
-      (CFG.EXPORT_GROUP_BY_SYSTEM ? "\n(With system subfolders)" : "");
+      (CFG.EXPORT_GROUP_BY_SYSTEM ? "\n(Grouped by system)" : "");
   }
 
-  alert("Generated " + LINES.length + " diagrams from:\n" + linesFolder.fsName + exportMsg);
+  alert("Generated " + LINES.length + " diagram(s).\n\nSource: " + systemFolders[0].parent.fsName + exportMsg);
 })();
