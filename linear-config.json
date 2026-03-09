@@ -26,6 +26,9 @@
 
   "FONT_SIZE": 17,
 
+  "MARKER_SCALE": 1.0,
+  "MARKER_FOOTER_GAP": 20
+
   "FONT_LABEL_NAME": "Futura-Demi",
   "FONT_TITLE_NAME": "Futura-Demi",
   "FONT_SUBTITLE_NAME": "Futura-Medium",
